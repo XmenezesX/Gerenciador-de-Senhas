@@ -13,9 +13,9 @@ class UsersSeeder extends Seeder {
     public function run()
     {
         $usuario = User::create(Array(
-            'username' => 'vegeta',
-            'name' => "vegeta",
-            'email' => "vegeta@gmail.com",
+            'username' => 'Menezes',
+            'name' => "Menezes",
+            'email' => "pignata.yan@gmail.com",
             'path_avatar' => User::$pathAvatarPadrao,
             'password' => 'nds'
         ));
