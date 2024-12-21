@@ -8,9 +8,6 @@
     if (!isset($menuativo)) {
         $menuativo = '';
     }
-    if (!isset($menuexpand)) {
-        $menuexpand = '';
-    }
 
     $gatewayClientes = [];
     $dataRequest = request()->all();
@@ -39,13 +36,14 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>CIT Systems</title>
+    <title>SamantaTur</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="title" content="CIT Systems">
+    <meta name="title" content="Samanta Tur">
     <meta name="author" content="CIT Systems">
-    <meta name="description" content="CIT Systems">
-    <meta name="keywords" content="CIT Systems">
-    <link rel="shortcut icon" href="{{ asset('assets/img/logo-cit.png') }}">
+    <meta name="description" content="Samanta Tur">
+    <meta name="keywords" content="">
+    <meta name="_authorization" content="{{ session('Authorization','') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/ico-samanta.png') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -64,6 +62,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.5/dist/sweetalert2.all.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
@@ -75,14 +76,6 @@
                         <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
                             <i class="bi bi-list"></i>
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <select name="gateway_client" id="gateway_client" class="form-select">
-                            @foreach ($gatewayClientes as $gt)
-                                <option value="{{ $gt->id }}" @if (($_GET['gateway_client_id'] ?? '') == $gt->id) selected @endif>
-                                    {{ $gt->name }}</option>
-                            @endforeach
-                        </select>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
@@ -111,51 +104,41 @@
                             </li>
                             <li class="user-body">
                                 <div class="row">
-                                    <div class="col-4 text-center"> <a href="#">Tema</a> </div>
+                                    <div class="col-12 text-center">
+                                        <a href="{{route('painel:meu-perfil')}}" class="btn btn-default btn-flat">Perfil</a>
+                                        <a href="#" class="btn btn-default btn-flat" id="alterar_senha">Redefinir senha</a>
+                                    </div>
                                 </div>
                             </li>
                             <li class="user-footer">
-                                <a href="#" class="btn btn-default btn-flat">Perfil</a>
-                                <a href="#" class="btn btn-default btn-flat float-end" id="realizar-logout">Logout</a>
+
+                                <li class="user-footer">
+                                    <a href="#" class="btn btn-warning btn-flat float-end"
+                                        id="realizar-logout">Logout</a>
+                                </li>
                             </li>
                         </ul>
                     </li>
                 </ul>
             </div>
         </nav>
-        <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <aside class="app-sidebar shadow" data-bs-theme="light">
             <div class="sidebar-brand">
                 <a href="{{ route('painel:home.painel') }}" class="brand-link">
                     @if ($client)
-                        <img src="{{ $pathImg ?? asset('assets/img/logo-cit.png') }}" alt="CIT"
-                            class="brand-image opacity-75 shadow">
+                        <img src="{{ $pathImg ?? asset('assets/img/ico-samanta.png') }}" alt="CIT"
+                            class="brand-image ">
                     @else
-                        <img src="{{ asset('assets/img/logo-cit.png') }}" alt="CIT"
-                            class="brand-image opacity-75 shadow">
+                        <img src="{{ asset('assets/img/ico-samanta.png') }}" alt="CIT"
+                            class="brand-image ">
                     @endif
-                    <span class="brand-text fw-light">{{ $client->name ?? 'CIT' }}</span>
+                    <span class="brand-text fw-light">SAMANTA<span>TUR</span></span>
                 </a>
             </div>
             <div class="sidebar-wrapper">
                 <nav class="mt-2">
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu"
                         data-accordion="false">
-                        <li class="nav-item"> <a href="#" class="nav-link menu-dashboard"> <i
-                                    class="nav-icon bi bi-speedometer"></i>
-                                <p>
-                                    Dashboard
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('painel:home.painel') }}" class="nav-link menu-status">
-                                        <i class="nav-icon bi bi-circle"></i>
-                                        <p>Status</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
                     </ul>
                 </nav>
             </div>
@@ -170,10 +153,63 @@
             </div>
         </main>
         @yield('modais')
+        <div class="modal fade" id="modalAlterarSenha" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="modalAlterarSenhaLabel">Alterar Minha Senha</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-4 pt-3">
+                                    <div class="form-group">
+                                        <label for="senhaatual">Senha atual:*</label>
+                                        <input type="password" name="senhaatual" class="form-control" id="senhaatual" placeholder="Digite sua senha" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 pt-3">
+                                    <div class="form-group">
+                                        <label for="novasenha">Nova senha:*</label>
+                                        <input type="password" name="novasenha" class="form-control" id="novasenha" placeholder="Digite sua nova senha" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 pt-3">
+                                    <div class="form-group">
+                                        <label for="confirmanovasenha">Confirmação da nova senha:*</label>
+                                        <input type="password" name="confirmanovasenha" class="form-control" id="confirmanovasenha" placeholder="Confirme sua nova senha" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div id="mensagensenhavalidacao">
+                                    <h5>Sua nova senha deve ter pelo menos:</h5>
+                                    <p id="letter" class="invalid">Uma letra <b>minúscula</b></p>
+                                    <p id="capital" class="invalid">Uma letra <b>maiúscula</b></p>
+                                    <p id="number" class="invalid">Um <b>número</b></p>
+                                    <p id="especial" class="invalid">Um caractere <b>especial</b></p>
+                                    <p id="length" class="invalid">No mínimo <b>8 caracteres</b></p>
+                                    <p id="confirmpassword" class="invalid" style="display: none;">A senha e confirmação da senha <b>não coincidem</b></p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12 d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-primary" id="btnalterarsenha" disabled>Alterar Senha</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <footer class="app-footer">
             <div class="float-end d-none d-sm-inline"></div><strong>
                 Copyright &copy; {{ date('Y') }}&nbsp;
-                <a href="{{ route('home.site') }}" class="text-decoration-none">CITSystems</a>.
+                <a href="{{ route('home.site') }}" class="text-decoration-none">SamantaTur</a>.
             </strong>
             Todos os direitos reservados.
         </footer>
@@ -181,7 +217,7 @@
     <script>
         var paginajsimport = `{{ App\Utils\Strings::slugify($titulo) }}`;
     </script>
-    <script src="{{ asset('/assets/js/main.js') }}"></script>
+    <script src="{{ asset('/assets/js/main.js') }}?v=1.00"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
     </script>
@@ -211,11 +247,180 @@
         integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY=" crossorigin="anonymous"></script>
     @yield('scripts_adicionais')
     <script>
+        var ipaddress = "";
         $(document).ready(function() {
+            var token = $('meta[name="_authorization"]').attr('content');
+            $.ajax({
+                url: "{{route('obtem-dados-logado')}}",
+                dataType: 'JSON',
+                type: 'GET',
+                headers:{
+                    'Authorization': token
+                },
+                success: function(result){
+                    var menus = result.menus;
+                    var html = "";
+                    for(var i = 0; i<menus.length; i++){
+                        let setasubmenu = "";
+                        if(menus[i].submenus.length > 0){
+                            setasubmenu = `<i class="nav-arrow bi bi-chevron-right"></i>`;
+                        }
+                        let part = `
+                        <a href="${menus[i].path}" class="nav-link" data-path="${menus[i].path}" data-id="${menus[i].id}"> 
+                            <i class="${menus[i].icone}"></i>
+                            <p>
+                                ${menus[i].nome}
+                                ${setasubmenu}
+                            </p>
+                        </a>
+                        `;
+                        let subpart = "";
+                        for(var j = 0; j < menus[i].submenus.length; j++){
+                            let submenu = menus[i].submenus[j];
+                            subpart += `<li class="nav-item">
+                                            <a href="${submenu.path}" class="nav-link" data-path="${submenu.path}" data-id="${submenu.id}" data-parent_id="${menus[i].id}">
+                                                <i class="${submenu.icone}"></i>
+                                                <p>${submenu.nome}</p>
+                                            </a>
+                                        </li>`;
+                        }
+                        if(menus[i].submenus.length > 0){
+                            part = part + `<ul class="nav nav-treeview"> ${subpart} </ul>`;
+                        }
+                        html = html + `<li class="nav-item"> ${part} </li>`;
+                    }
+                    $(".sidebar-menu").html(html);
+                    @if ($menuativo)
+                        var menuat = $('.nav-link[data-path="{{$menuativo}}"]');
+                        if(menuat.data('parent_id')){
+                            $($('.nav-link[data-id="'+menuat.data('parent_id')+'"]').parent()).addClass('menu-open');
+                        }
+                        if($('.nav-link[data-path="{{$menuativo}}"] .bi-circle').length){
+                            $('.nav-link[data-path="{{$menuativo}}"] .bi-circle').removeClass("bi-circle").addClass("bi-circle-fill");
+                        }
+                        menuat.addClass('active');
+                    @endif
+                },
+                error: function(err, resp, text) {
+                    ExibeMensagemErroAPI(err);
+                }
+            });
             $("#gateway_client").on("change", function() {
                 var url = new URL(window.location.href);
                 url.searchParams.set('gateway_client_id', $("#gateway_client").val());
                 window.location.href = url.toString();
+            });
+             $("#alterar_senha").on("click", function(e){
+                e.preventDefault();
+                $("#mensagensenhavalidacao").hide();
+                $("#modalAlterarSenha").modal('show');
+                $.ajax({
+                    url: "https://api.ipify.org/?format=json",
+                    type: 'GET',
+                    success: function(dados) {
+                        ipaddress = dados.ip;
+                    },
+                    error: function(error) { ipaddress = "ERRO OBTENCAO IP"; }
+                });
+            });
+            var inputsenha = document.getElementById("novasenha");
+            var inputconfirmasenha = document.getElementById("confirmanovasenha");
+            var senhaatual = document.getElementById("senhaatual");
+            var letter = document.getElementById("letter");
+            var capital = document.getElementById("capital");
+            var number = document.getElementById("number");
+            var especial = document.getElementById("especial");
+            var length = document.getElementById("length");
+            var confirmpassword = document.getElementById("confirmpassword");
+            var requisitsMinimosSenha = false;
+            inputsenha.onfocus = function() {
+                $("#mensagensenhavalidacao").show('slow');
+            }
+            inputconfirmasenha.onfocus = function() {
+                $("#confirmpassword").show('slow');
+            }
+            function ValidaRequisitosSenha() {
+                function defineValido(obj){
+                    obj.classList.remove("invalid");
+                    obj.classList.add("valid");
+                }
+                function defineInvalido(obj){
+                    obj.classList.remove("valid");
+                    obj.classList.add("invalid");
+                    requisitsMinimosSenha = false;
+                }
+                
+                function validaRegex(obj, regex){
+                    if(inputsenha.value.match(regex)) {
+                        defineValido(obj);
+                        return true;
+                    } else {
+                        defineInvalido(obj);
+                    }
+                    return false;
+                }
+                requisitsMinimosSenha = true;
+                validaRegex(letter, /[a-z]/g);//minuscula
+                validaRegex(capital, /[A-Z]/g);//maiuscula
+                validaRegex(number, /[0-9]/g);//numeros
+                validaRegex(especial, /\W|_/);//especial
+                
+                if(inputsenha.value.length >= 8) {
+                    defineValido(length);
+                } else {
+                    defineInvalido(length);
+                }
+
+                if(requisitsMinimosSenha && $("#novasenha").val() == $("#confirmanovasenha").val()){
+                    defineValido(confirmpassword);
+                }else{
+                    defineInvalido(confirmpassword);
+                }
+
+                if(requisitsMinimosSenha && $("#senhaatual").val() == ''){
+                    requisitsMinimosSenha = false;
+                }
+
+                if(requisitsMinimosSenha){
+                    $("#btnalterarsenha").prop("disabled", false);
+                }else{
+                    $("#btnalterarsenha").prop("disabled", true);
+                }
+            }
+            inputsenha.onkeyup = ValidaRequisitosSenha;
+            inputconfirmasenha.onkeyup = ValidaRequisitosSenha;
+            senhaatual.onkeyup = ValidaRequisitosSenha;
+            $("#btnalterarsenha").on("click", function(){
+                var load = CriaLoad();
+                $.ajax({
+                    url: "{{route('alterar.senha')}}",
+                    dataType: 'JSON',
+                    type: 'POST',
+                    data: {
+                        senhaatual : $("#senhaatual").val(),
+                        novasenha : $("#novasenha").val(),
+                        confirmanovasenha : $("#confirmanovasenha").val(),
+                        ipaddress : ipaddress
+                    },
+                    headers:{
+                        'Authorization': "{{session('Authorization','')}}"
+                    },
+                    success: function(result){
+                        load.close();
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: `${result.mensagem}`,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(function(){
+                            location.reload();
+                        });
+                    },
+                    error: function(err, resp, text) {
+                        load.close();
+                        ExibeMensagemErroAPI(err);
+                    }
+                });
             });
             $(".nav-link").removeClass('active');
             $(".menu-open").removeClass('menu-open');
@@ -236,25 +441,6 @@
                     }
                 });
             });
-            @if ($menuativo)
-                @php
-                    $menuativo = explode('|', $menuativo);
-                @endphp
-                @foreach ($menuativo as $menu)
-                    $(".{{ $menu }}").addClass('active');
-                    if($(".{{ $menu }} .bi-circle").length){
-                        $(".{{ $menu }} .bi-circle").removeClass("bi-circle").addClass("bi-circle-fill");
-                    }
-                @endforeach
-            @endif
-            @if ($menuexpand)
-                @php
-                    $menuexpand = explode('|', $menuexpand);
-                @endphp
-                @foreach ($menuexpand as $menu)
-                    $($(".{{ $menu }}").parent()).addClass('menu-open');
-                @endforeach
-            @endif
         });
     </script>
 </body>
